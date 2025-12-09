@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quadra de Bike Polo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div class="brand">
+        <!-- Troque o src pela logo do clube -->
+        <img
+          src="assets/logo-pior-bikepolo.png"
+          alt="Logo do clube de bike polo"
+          class="logo-clube"
+        />
+        <div>
+          <h1>Quadra de Bike Polo</h1>
+          <p>Abra uma quadra, adicione pessoas e gere partidas equilibradas.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Seção Quadra -->
+    <section class="card" id="sec-quadra">
+      <h2>Quadra</h2>
+      <label>
+        Nome da quadra:
+        <input
+          type="text"
+          id="quadraNome"
+          placeholder="Ex: PIOR Quadra"
+          autocomplete="off"
+        />
+      </label>
+      <button id="btnCriarQuadra">Criar / Resetar quadra</button>
+      <p id="quadraInfo" class="info"></p>
+    </section>
+
+    <!-- Seção Jogadores -->
+    <section class="card" id="sec-jogadores">
+      <h2>Lista de pessoas</h2>
+      <form class="inline-form" id="formJogador">
+        <input
+          type="text"
+          id="jogadorNome"
+          placeholder="Nome da pessoa"
+          autocomplete="off"
+          autocapitalize="words"
+        />
+        <button type="submit" id="btnAdicionarJogador">Adicionar</button>
+      </form>
+      <div class="table-wrapper">
+        <table id="tabelaJogadores">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Jogos jogados</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- preenchido via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Seção Conflitos -->
+    <section class="card" id="sec-conflitos">
+      <h2>Conflitos entre pessoas</h2>
+      <p class="info">
+        Use conflitos para evitar que determinadas pessoas joguem juntas
+        no mesmo time ou na mesma partida.
+      </p>
+      <div class="inline-form">
+        <select id="selectJogadorA"></select>
+        <select id="selectJogadorB"></select>
+        <select id="selectTipoConflito">
+          <option value="NAO_MESMO_TIME">Não podem jogar no mesmo time</option>
+          <option value="NAO_MESMA_PARTIDA">
+            Não podem estar na mesma partida
+          </option>
+        </select>
+        <button id="btnAdicionarConflito">Adicionar conflito</button>
+      </div>
+      <ul id="listaConflitos">
+        <!-- preenchido via JS -->
+      </ul>
+    </section>
+
+    <!-- Seção Configuração da próxima partida -->
+    <section class="card" id="sec-config">
+      <h2>Próxima partida</h2>
+      <label class="checkbox-row">
+        <input type="checkbox" id="chkPriorizarMenosJogos" />
+        Priorizar quem jogou menos partidas
+      </label>
+      <button id="btnGerarPartida">Gerar próxima partida</button>
+      <p id="erroPartida" class="erro"></p>
+    </section>
+
+    <!-- Seção Partida atual -->
+    <section class="card" id="sec-partida">
+      <h2>Partida atual</h2>
+      <div id="partidaConteudo">
+        <p>Nenhuma partida gerada ainda.</p>
+      </div>
+
+      <div class="placar">
+        <div class="placar-time">
+          <label>
+            Gols Time A
+            <input
+              type="number"
+              id="placarTimeA"
+              min="0"
+              inputmode="numeric"
+            />
+          </label>
+        </div>
+        <div class="placar-time">
+          <label>
+            Gols Time B
+            <input
+              type="number"
+              id="placarTimeB"
+              min="0"
+              inputmode="numeric"
+            />
+          </label>
+        </div>
+      </div>
+
+      <button id="btnFinalizarPartida" disabled>Finalizar partida</button>
+      <p class="info">
+        Ao finalizar, a partida é registrada no histórico e cada pessoa ganha
+        +1 jogo jogado.
+      </p>
+    </section>
+
+    <!-- Histórico de partidas -->
+    <section class="card" id="sec-historico">
+      <h2>Histórico de partidas</h2>
+      <p class="info">
+        Partidas finalizadas com times, placar e saldo de gols.
+      </p>
+      <div class="table-wrapper">
+        <table id="tabelaHistorico">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Time A</th>
+              <th>Gols A</th>
+              <th>Time B</th>
+              <th>Gols B</th>
+              <th>Saldo (A - B)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- preenchido via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

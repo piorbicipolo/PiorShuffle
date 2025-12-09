@@ -1,0 +1,393 @@
+/* =========================================================
+   TEMA PIOR BICI POLO – cores & fontes
+   ========================================================= */
+
+/* 🎨 Cores principais – troque aqui se quiser ajustar o tema */
+:root {
+  --cor-fundo: #fb0f98;          /* rosa forte do cartaz */
+  --cor-texto: #ffffff;
+  --cor-card: #241034;           /* roxo bem escuro */
+  --cor-borda: #82226c;          /* roxo intermediário */
+  --cor-primaria: #ff931e;       /* laranja da logo */
+  --cor-primaria-texto: #1a0b12;
+  --cor-input-bg: #13071f;
+  --cor-input-borda: #fb8bcf;
+  --cor-subtexto: #f5c6ea;
+  --cor-erro: #ffb4b4;
+
+  /* 🔤 Variáveis de fonte (ponto único de troca) */
+  --font-titulos: "PiorTitulos", system-ui, sans-serif;
+  --font-botoes: "PiorTitulos", system-ui, sans-serif;
+  --font-textos: "PiorTextos", system-ui, sans-serif;
+  --font-tabelas: "PiorTabelas", system-ui, sans-serif;
+}
+
+/* =========================================================
+   FONTES – conectando arquivos reais com nomes internos
+   ========================================================= */
+
+/* Títulos e botões: HVD_Poster_Clean */
+@font-face {
+  font-family: "PiorTitulos";
+  src: url("assets/fonts/HVD_Poster_Clean.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* Textos descritivos: Window Notes */
+@font-face {
+  font-family: "PiorTextos";
+  src: url("assets/fonts/Window Notes.otf") format("opentype");
+  font-display: swap;
+}
+
+/* Valores de tabelas: Cipitillo */
+@font-face {
+  font-family: "PiorTabelas";
+  src: url("assets/fonts/Cipitillo.otf") format("opentype");
+  font-display: swap;
+}
+
+/* Se quiser testar outra hierarquia no futuro, basta trocar:
+   --font-titulos, --font-botoes, --font-textos, --font-tabelas
+   e não precisa mexer no resto do arquivo. */
+
+* {
+  box-sizing: border-box;
+}
+
+/* Textos "default" (onde não estiver definido explicitamente) */
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, #ff66c3 0, #fb0f98 40%, #2a1036 100%);
+  color: var(--cor-texto);
+  font-family: var(--font-textos);
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Cabeçalho */
+
+.header {
+  margin-bottom: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(
+    90deg,
+    rgba(36, 16, 52, 0.9),
+    rgba(130, 34, 108, 0.95)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-clube {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 999px;
+  border: 3px solid var(--cor-primaria);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4);
+  background: #000;
+}
+
+/* Título principal usa fonte de TÍTULOS */
+h1 {
+  margin: 0 0 0.25rem 0;
+  font-family: var(--font-titulos);
+  letter-spacing: 0.04em;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+}
+
+header p {
+  margin: 0;
+  color: var(--cor-subtexto);
+  font-size: 0.92rem;
+  font-family: var(--font-textos); /* garante hierarquia */
+}
+
+/* Cards */
+
+.card {
+  background: var(--cor-card);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--cor-borda);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* Títulos de seções também = TÍTULOS */
+.card h2 {
+  margin-top: 0;
+  font-family: var(--font-titulos);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-textos);
+}
+
+/* Inputs & selects */
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--cor-input-borda);
+  background: var(--cor-input-bg);
+  color: var(--cor-texto);
+  font-size: 0.95rem;
+  font-family: var(--font-textos);
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder {
+  color: rgba(245, 198, 234, 0.65);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 1px;
+}
+
+/* Botões → fonte de BOTÕES */
+
+button {
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--cor-primaria);
+  color: var(--cor-primaria-texto);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-botoes);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.08s ease, box-shadow 0.08s ease,
+    background-color 0.08s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  background: #ffac4c;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.inline-form input[type="text"],
+.inline-form select {
+  flex: 1;
+}
+
+.inline-form button {
+  white-space: nowrap;
+}
+
+/* Textos descritivos (infos) → fonte de TEXTOS */
+
+.info {
+  font-size: 0.9rem;
+  color: var(--cor-subtexto);
+  font-family: var(--font-textos);
+}
+
+.erro {
+  color: var(--cor-erro);
+  font-size: 0.9rem;
+  font-family: var(--font-textos);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Tabelas */
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+/* Cabeçalho da tabela → mais "título" */
+th {
+  padding: 0.4rem;
+  border-bottom: 1px solid var(--cor-borda);
+  text-align: left;
+  color: var(--cor-subtexto);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--font-titulos);
+}
+
+/* Valores da tabela → fonte de TABELAS */
+td {
+  padding: 0.4rem;
+  border-bottom: 1px solid var(--cor-borda);
+  font-family: var(--font-tabelas);
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(19, 7, 31, 0.9);
+}
+
+/* Partida */
+
+.badge-time {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: var(--cor-primaria);
+  color: var(--cor-primaria-texto);
+  font-family: var(--font-botoes);
+}
+
+.partida-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.partida-time {
+  flex: 1;
+  min-width: 140px;
+  background: #13071f;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.partida-time h3 {
+  margin-top: 0;
+  font-size: 1rem;
+  font-family: var(--font-titulos);
+  text-transform: uppercase;
+}
+
+.partida-time ul {
+  list-style: none;
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.partida-time li {
+  margin-bottom: 0.2rem;
+  font-family: var(--font-tabelas);
+}
+
+/* Placar */
+
+.placar {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.placar-time {
+  flex: 1;
+}
+
+/* Conflitos */
+
+#listaConflitos {
+  list-style: none;
+  padding-left: 0;
+  font-size: 0.9rem;
+}
+
+#listaConflitos li {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--cor-borda);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-textos);
+}
+
+#listaConflitos button {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+}
+
+/* Mobile */
+
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .inline-form {
+    flex-direction: column;
+  }
+
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  .partida-times {
+    flex-direction: column;
+  }
+
+  .placar {
+    flex-direction: column;
+  }
+
+  .brand {
+    align-items: flex-start;
+  }
+}
