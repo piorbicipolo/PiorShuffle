@@ -1,11 +1,19 @@
 // app.js
 
+// ===============================
 // Estado global simples
+// ===============================
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbwR2cGmI9k2Ljr1Du9I_NEvakioJwSBDcY4XAqFyjQYK4TBKqwJiK5gcAFziiZh9g/exec";
+
 let quadra = null;
 let nextGlobalId = 1;
 let partidaAtualId = null;
 
-const STORAGE_KEY = "polo_quadra_estado_v1";
+// id da sessão/quadra atual (usado para falar com o Sheets)
+let currentQuadraId = null;
+const ID_STORAGE_KEY = "polo_id_quadra_atual_v1";
+
 
 // Tipos de conflito
 const TipoConflito = {
@@ -13,57 +21,203 @@ const TipoConflito = {
   NAO_MESMA_PARTIDA: "NAO_MESMA_PARTIDA",
 };
 
+// ===============================
 // Utilidades básicas
+// ===============================
+
+function gerarIdQuadra(nome) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate() + 0).padStart(2, "0");
+  const h = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+
+  const slug =
+    (nome || "quadra")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // tira acentos
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "quadra";
+
+  return `${y}${m}${d}_${h}${min}_${slug}`;
+}
+
+
 function gerarId() {
   const id = nextGlobalId++;
   console.log("[LOG] gerarId ->", id);
   return id;
 }
 
-function salvarEstado() {
+async function salvarEstado() {
+  if (!quadra) return;
+
+  // se por algum motivo ainda não tiver id de quadra, gera um agora
+  if (!currentQuadraId) {
+    currentQuadraId = gerarIdQuadra(quadra.nome || "Quadra");
+    localStorage.setItem(ID_STORAGE_KEY, currentQuadraId);
+  }
+
+  const estado = {
+    quadra,
+    nextGlobalId,
+    partidaAtualId,
+  };
+
+  const body = new URLSearchParams();
+  body.append("id_quadra", currentQuadraId);
+  body.append("estado_json", JSON.stringify(estado));
+
+  console.log("[LOG] salvando no servidor (form-urlencoded)...", {
+    id_quadra: currentQuadraId,
+    estado,
+  });
+
   try {
-    const estado = {
-      quadra,
-      nextGlobalId,
-      partidaAtualId,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
-    console.log("[LOG] salvarEstado ->", estado);
-  } catch (e) {
-    console.error("[LOG][ERRO] salvarEstado:", e);
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body,
+    });
+
+    const texto = await res.text();
+    console.log("[LOG] resposta da API:", texto);
+  } catch (err) {
+    console.error("[LOG] erro ao salvar no servidor:", err);
   }
 }
 
-function carregarEstado() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    console.log("[LOG] carregarEstado -> nenhum estado salvo");
+
+async function carregarEstado() {
+  if (!currentQuadraId) {
+    console.log(
+      "[LOG] carregarEstado -> sem id de quadra local, nada para buscar no servidor"
+    );
     return;
   }
+
   try {
-    const estado = JSON.parse(raw);
-    quadra = estado.quadra;
-    nextGlobalId = estado.nextGlobalId || 1;
-    partidaAtualId = estado.partidaAtualId || null;
-    console.log("[LOG] carregarEstado ->", estado);
+    const res = await fetch(
+      API_URL + "?id=" + encodeURIComponent(currentQuadraId)
+    );
+    const data = await res.json();
+
+    console.log("[LOG] carregarEstado -> recebido da API:", data);
+
+    if (!data || !data.quadra) {
+      console.log("[LOG] nenhuma quadra salva ainda para este id");
+      return;
+    }
+
+    quadra = data.quadra;
+    nextGlobalId = data.nextGlobalId || 1;
+    partidaAtualId = data.partidaAtualId || null;
   } catch (e) {
     console.error("[LOG][ERRO] carregarEstado:", e);
   }
 }
 
-// Inicialização
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("[LOG] DOMContentLoaded - inicializando app Bike Polo");
 
-  // Elementos
+
+
+// Helpers de arrays
+function embaralharArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function combinacoesDe(arr, k) {
+  const resultado = [];
+  function backtrack(inicio, combo) {
+    if (combo.length === k) {
+      resultado.push(combo.slice());
+      return;
+    }
+    for (let i = inicio; i < arr.length; i++) {
+      combo.push(arr[i]);
+      backtrack(i + 1, combo);
+      combo.pop();
+    }
+  }
+  backtrack(0, []);
+  return resultado;
+}
+
+// ===============================
+// Regras de conflito
+// ===============================
+function naoGeraConflitoMesmaPartida(jogador, listaAtual, conflitos) {
+  for (const outro of listaAtual) {
+    for (const conf of conflitos) {
+      if (conf.tipo !== TipoConflito.NAO_MESMA_PARTIDA) continue;
+      const par1 =
+        conf.jogadorA_id === jogador.id && conf.jogadorB_id === outro.id;
+      const par2 =
+        conf.jogadorB_id === jogador.id && conf.jogadorA_id === outro.id;
+      if (par1 || par2) {
+        console.log(
+          "[LOG] conflito NAO_MESMA_PARTIDA bloqueou jogador",
+          jogador,
+          "com",
+          outro,
+          "->",
+          conf
+        );
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function naoGeraConflitoMesmoTime(time, conflitos) {
+  for (let i = 0; i < time.length; i++) {
+    for (let j = i + 1; j < time.length; j++) {
+      const a = time[i];
+      const b = time[j];
+      for (const conf of conflitos) {
+        if (conf.tipo !== TipoConflito.NAO_MESMO_TIME) continue;
+        const par1 = conf.jogadorA_id === a.id && conf.jogadorB_id === b.id;
+        const par2 = conf.jogadorB_id === a.id && conf.jogadorA_id === b.id;
+        if (par1 || par2) {
+          console.log(
+            "[LOG] conflito NAO_MESMO_TIME bloqueou par",
+            a,
+            b,
+            "->",
+            conf
+          );
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// ===============================
+// DOM + Lógica principal
+// ===============================
+document.addEventListener("DOMContentLoaded", async () => {
+  console.log("[LOG] DOMContentLoaded - inicializando app Bike Polo");
+    // tenta recuperar o id da última quadra usada neste dispositivo
+  currentQuadraId = localStorage.getItem(ID_STORAGE_KEY);
+  console.log("[LOG] id de quadra carregado do localStorage:", currentQuadraId);
+
+
+  // ----- Elementos da UI -----
   const quadraNomeInput = document.getElementById("quadraNome");
   const btnCriarQuadra = document.getElementById("btnCriarQuadra");
   const quadraInfo = document.getElementById("quadraInfo");
 
   const formJogador = document.getElementById("formJogador");
   const jogadorNomeInput = document.getElementById("jogadorNome");
-  const btnAdicionarJogador = document.getElementById("btnAdicionarJogador");
   const tabelaJogadoresBody = document.querySelector("#tabelaJogadores tbody");
+
+  const quickButtons = document.querySelectorAll(".quick-player-button");
 
   const selectJogadorA = document.getElementById("selectJogadorA");
   const selectJogadorB = document.getElementById("selectJogadorB");
@@ -71,7 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnAdicionarConflito = document.getElementById("btnAdicionarConflito");
   const listaConflitos = document.getElementById("listaConflitos");
 
-  const chkPriorizarMenosJogos = document.getElementById("chkPriorizarMenosJogos");
+  const chkPriorizarMenosJogos = document.getElementById(
+    "chkPriorizarMenosJogos"
+  );
   const btnGerarPartida = document.getElementById("btnGerarPartida");
   const erroPartida = document.getElementById("erroPartida");
 
@@ -82,7 +238,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const tabelaHistoricoBody = document.querySelector("#tabelaHistorico tbody");
 
+  // ----- Abas -----
+  const tabButtons = document.querySelectorAll(".tab-button");
+  const tabSections = document.querySelectorAll("[data-tab]");
+
+  function setActiveTab(name) {
+    console.log("[LOG] setActiveTab ->", name);
+    tabButtons.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.tabName === name);
+    });
+
+    tabSections.forEach((sec) => {
+      const secTab = sec.dataset.tab;
+      sec.classList.toggle("hidden", secTab !== name);
+    });
+  }
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.tabName;
+      setActiveTab(target);
+    });
+  });
+
+  // ===============================
   // Funções de renderização
+  // ===============================
   function atualizarQuadraInfo() {
     if (!quadra) {
       quadraInfo.textContent = "Nenhuma quadra criada.";
@@ -101,6 +282,23 @@ document.addEventListener("DOMContentLoaded", () => {
         opt.textContent = j.nome;
         select.appendChild(opt);
       });
+    });
+  }
+
+  function atualizarQuickButtons() {
+    if (!quickButtons) return;
+
+    if (!quadra) {
+      quickButtons.forEach((btn) => btn.classList.remove("active"));
+      return;
+    }
+
+    quickButtons.forEach((btn) => {
+      const nome = btn.dataset.nome;
+      const existe = quadra.jogadores.some(
+        (j) => j.nome.toLowerCase() === nome.toLowerCase()
+      );
+      btn.classList.toggle("active", !!existe);
     });
   }
 
@@ -132,6 +330,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tabelaJogadoresBody.appendChild(tr);
     });
+
+    // Sincroniza estado visual dos botões rápidos
+    atualizarQuickButtons();
   }
 
   function renderConflitos() {
@@ -229,11 +430,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     partidaConteudo.appendChild(wrapper);
 
-    // Placar
-    placarTimeAInput.disabled =
-      partida.status === "finalizada" ? true : false;
-    placarTimeBInput.disabled =
-      partida.status === "finalizada" ? true : false;
+    placarTimeAInput.disabled = partida.status === "finalizada";
+    placarTimeBInput.disabled = partida.status === "finalizada";
 
     placarTimeAInput.value =
       partida.golsTimeA != null ? partida.golsTimeA : "";
@@ -295,31 +493,39 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("[LOG] renderHistorico ->", partidasFinalizadas);
   }
 
+  // ===============================
   // Lógica principal
+  // ===============================
+function criarOuResetarQuadra() {
+  const nome = quadraNomeInput.value.trim() || "Quadra sem nome";
 
-  function criarOuResetarQuadra() {
-    const nome = quadraNomeInput.value.trim() || "Quadra sem nome";
+  // gera um novo id de sessão baseado em data/hora + nome
+  currentQuadraId = gerarIdQuadra(nome);
+  localStorage.setItem(ID_STORAGE_KEY, currentQuadraId);
 
-    quadra = {
-      id: gerarId(),
-      nome,
-      jogadores: [],
-      conflitos: [],
-      partidas: [],
-      proxima_partida_id: 1,
-    };
-    partidaAtualId = null;
+  // reinicia contador de IDs internos (pessoas, conflitos, etc.)
+  nextGlobalId = 1;
+  partidaAtualId = null;
 
-    console.log("[LOG] criarOuResetarQuadra ->", quadra);
+  quadra = {
+    id: currentQuadraId,
+    nome,
+    jogadores: [],
+    conflitos: [],
+    partidas: [],
+    proxima_partida_id: 1,
+  };
 
-    atualizarQuadraInfo();
-    renderJogadores();
-    atualizarSelectJogadores();
-    renderConflitos();
-    renderPartidaAtual();
-    renderHistorico();
-    salvarEstado();
-  }
+  console.log("[LOG] criarOuResetarQuadra ->", quadra, "id:", currentQuadraId);
+
+  atualizarQuadraInfo();
+  renderJogadores();
+  atualizarSelectJogadores();
+  renderConflitos();
+  renderPartidaAtual();
+  renderHistorico();
+  salvarEstado();
+}
 
   function adicionarJogador() {
     if (!quadra) {
@@ -333,18 +539,16 @@ document.addEventListener("DOMContentLoaded", () => {
       id: gerarId(),
       nome,
       jogos_jogados: 0,
+      chegouEm: Date.now(),
+      primeiroJogoPendente: true,
     };
     quadra.jogadores.push(jogador);
     jogadorNomeInput.value = "";
-
-    console.log("[LOG] adicionarPessoa ->", jogador);
 
     atualizarQuadraInfo();
     renderJogadores();
     atualizarSelectJogadores();
     renderConflitos();
-    renderPartidaAtual();
-    renderHistorico();
     salvarEstado();
 
     jogadorNomeInput.focus();
@@ -379,6 +583,45 @@ document.addEventListener("DOMContentLoaded", () => {
     renderConflitos();
     renderPartidaAtual();
     renderHistorico();
+    salvarEstado();
+  }
+
+  function toggleJogadorRapido(nome) {
+    if (!quadra) {
+      alert("Crie uma quadra primeiro.");
+      return;
+    }
+
+    const existente = quadra.jogadores.find(
+      (j) => j.nome.toLowerCase() === nome.toLowerCase()
+    );
+
+    if (existente) {
+      const ok = confirm(`Remover ${nome} da lista de hoje?`);
+      if (!ok) return;
+
+      quadra.jogadores = quadra.jogadores.filter(
+        (j) => j.id !== existente.id
+      );
+      quadra.conflitos = quadra.conflitos.filter(
+        (c) =>
+          c.jogadorA_id !== existente.id && c.jogadorB_id !== existente.id
+      );
+    } else {
+      const jogador = {
+        id: gerarId(),
+        nome,
+        jogos_jogados: 0,
+        chegouEm: Date.now(),
+        primeiroJogoPendente: true,
+      };
+      quadra.jogadores.push(jogador);
+    }
+
+    atualizarQuadraInfo();
+    renderJogadores();
+    atualizarSelectJogadores();
+    renderConflitos();
     salvarEstado();
   }
 
@@ -429,102 +672,47 @@ document.addEventListener("DOMContentLoaded", () => {
     salvarEstado();
   }
 
-  // Regras de conflito (por pessoa, para seleção de partida)
-
-  function naoGeraConflitoMesmaPartida(jogador, listaAtual, conflitos) {
-    for (const outro of listaAtual) {
-      for (const conf of conflitos) {
-        if (conf.tipo !== TipoConflito.NAO_MESMA_PARTIDA) continue;
-        const par1 = conf.jogadorA_id === jogador.id && conf.jogadorB_id === outro.id;
-        const par2 = conf.jogadorB_id === jogador.id && conf.jogadorA_id === outro.id;
-        if (par1 || par2) {
-          console.log(
-            "[LOG] conflito NAO_MESMA_PARTIDA bloqueou jogador",
-            jogador,
-            "com",
-            outro,
-            "->",
-            conf
-          );
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  function naoGeraConflitoMesmoTime(time, conflitos) {
-    for (let i = 0; i < time.length; i++) {
-      for (let j = i + 1; j < time.length; j++) {
-        const a = time[i];
-        const b = time[j];
-        for (const conf of conflitos) {
-          if (conf.tipo !== TipoConflito.NAO_MESMO_TIME) continue;
-          const par1 = conf.jogadorA_id === a.id && conf.jogadorB_id === b.id;
-          const par2 = conf.jogadorB_id === a.id && conf.jogadorA_id === b.id;
-          if (par1 || par2) {
-            console.log(
-              "[LOG] conflito NAO_MESMO_TIME bloqueou par",
-              a,
-              b,
-              "->",
-              conf
-            );
-            return false;
-          }
-        }
-      }
-    }
-    return true;
-  }
-
   // Seleção de pessoas e geração de times
-
   function selecionarPessoasParaPartida(priorizarMenosJogos) {
     if (!quadra) return null;
     if (quadra.jogadores.length < 6) {
       throw new Error("É preciso ter pelo menos 6 pessoas para gerar uma partida.");
     }
 
-    const pessoas = quadra.jogadores.slice();
+    let jogadores = quadra.jogadores.slice();
+
+    const recemChegades = jogadores.filter((p) => p.primeiroJogoPendente);
+    const veteranas = jogadores.filter((p) => !p.primeiroJogoPendente);
+
+    embaralharArray(recemChegades);
 
     if (priorizarMenosJogos) {
-      pessoas.sort((a, b) => a.jogos_jogados - b.jogos_jogados);
-      embaralharArray(pessoas);
-      console.log(
-        "[LOG] selecionarPessoasParaPartida (priorizarMenosJogos=true) -> ordenadas:",
-        pessoas
-      );
+      veteranas.sort((a, b) => a.jogos_jogados - b.jogos_jogados);
+      embaralharArray(veteranas);
     } else {
-      embaralharArray(pessoas);
-      console.log(
-        "[LOG] selecionarPessoasParaPartida (priorizarMenosJogos=false) -> embaralhadas:",
-        pessoas
-      );
+      embaralharArray(veteranas);
     }
+
+    jogadores = [...recemChegades, ...veteranas];
 
     const selecionados = [];
 
-    for (const pessoa of pessoas) {
+    for (const jogador of jogadores) {
       if (selecionados.length === 6) break;
+
       if (
-        naoGeraConflitoMesmaPartida(pessoa, selecionados, quadra.conflitos)
+        naoGeraConflitoMesmaPartida(jogador, selecionados, quadra.conflitos)
       ) {
-        selecionados.push(pessoa);
+        selecionados.push(jogador);
       }
     }
 
     if (selecionados.length < 6) {
-      console.log(
-        "[LOG][ERRO] selecionarPessoasParaPartida -> não conseguiu 6 pessoas",
-        selecionados
-      );
       throw new Error(
         "Não foi possível montar 6 pessoas respeitando os conflitos de 'não mesma partida'."
       );
     }
 
-    console.log("[LOG] selecionarPessoasParaPartida -> selecionadas:", selecionados);
     return selecionados;
   }
 
@@ -595,11 +783,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const partida = quadra.partidas.find((p) => p.id === partidaAtualId);
     if (!partida) {
-      console.log("[LOG][ERRO] finalizarPartidaAtual -> partida não encontrada", partidaAtualId);
+      console.log(
+        "[LOG][ERRO] finalizarPartidaAtual -> partida não encontrada",
+        partidaAtualId
+      );
       return;
     }
     if (partida.status === "finalizada") {
-      console.log("[LOG] finalizarPartidaAtual -> partida já finalizada", partida.id);
+      console.log(
+        "[LOG] finalizarPartidaAtual -> partida já finalizada",
+        partida.id
+      );
       return;
     }
 
@@ -617,9 +811,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const todos = [...partida.timeA, ...partida.timeB];
 
     todos.forEach((jogadorPartida) => {
-      const original = quadra.jogadores.find((j) => j.id === jogadorPartida.id);
+      const original = quadra.jogadores.find(
+        (j) => j.id === jogadorPartida.id
+      );
       if (original) {
         original.jogos_jogados += 1;
+        if (original.primeiroJogoPendente) {
+          original.primeiroJogoPendente = false;
+        }
       }
     });
 
@@ -627,37 +826,17 @@ document.addEventListener("DOMContentLoaded", () => {
     partidaAtualId = null;
 
     console.log("[LOG] finalizarPartidaAtual -> partida finalizada:", partida);
-    console.log("[LOG] finalizarPartidaAtual -> pessoas atualizadas:", quadra.jogadores);
+    console.log(
+      "[LOG] finalizarPartidaAtual -> pessoas atualizadas:",
+      quadra.jogadores
+    );
+
+    salvarEstado();
   }
 
-  // helpers de arrays
-
-  function embaralharArray(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-
-  function combinacoesDe(arr, k) {
-    const resultado = [];
-    function backtrack(inicio, combo) {
-      if (combo.length === k) {
-        resultado.push(combo.slice());
-        return;
-      }
-      for (let i = inicio; i < arr.length; i++) {
-        combo.push(arr[i]);
-        backtrack(i + 1, combo);
-        combo.pop();
-      }
-    }
-    backtrack(0, []);
-    return resultado;
-  }
-
-  // Handlers
-
+  // ===============================
+  // Eventos de UI
+  // ===============================
   btnCriarQuadra.addEventListener("click", () => {
     criarOuResetarQuadra();
   });
@@ -667,10 +846,22 @@ document.addEventListener("DOMContentLoaded", () => {
     adicionarJogador();
   });
 
-  btnAdicionarJogador.addEventListener("click", (ev) => {
-    ev.preventDefault();
-    adicionarJogador();
-  });
+  const btnAdicionarJogador = document.getElementById("btnAdicionarJogador");
+  if (btnAdicionarJogador) {
+    btnAdicionarJogador.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      adicionarJogador();
+    });
+  }
+
+  if (quickButtons) {
+    quickButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const nome = btn.dataset.nome;
+        toggleJogadorRapido(nome);
+      });
+    });
+  }
 
   btnAdicionarConflito.addEventListener("click", () => {
     adicionarConflito();
@@ -696,11 +887,12 @@ document.addEventListener("DOMContentLoaded", () => {
     renderJogadores();
     renderPartidaAtual();
     renderHistorico();
-    salvarEstado();
   });
 
-  // Carrega estado salvo, se existir
-  carregarEstado();
+  // ===============================
+  // Inicialização de estado + aba
+  // ===============================
+  await carregarEstado();
 
   if (!quadra) {
     atualizarQuadraInfo();
@@ -712,4 +904,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPartidaAtual();
     renderHistorico();
   }
+
+  setActiveTab("setup");
 });

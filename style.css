@@ -33,10 +33,10 @@
   font-display: swap;
 }
 
-/* Textos descritivos: Window Notes */
+/* Textos descritivos: HVD_Poster_Clean */
 @font-face {
   font-family: "PiorTextos";
-  src: url("assets/fonts/Window Notes.otf") format("opentype");
+  src: url("assets/fonts/HVD_Poster_Clean.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -46,6 +46,42 @@
   src: url("assets/fonts/Cipitillo.otf") format("opentype");
   font-display: swap;
 }
+
+/* Abas principais */
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--cor-borda);
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.tab-button {
+  flex: 1;
+  text-align: center;
+  background: #13071f;
+  color: var(--cor-texto);
+  border-radius: 999px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--cor-borda);
+  font-family: var(--font-botoes);
+  white-space: nowrap;
+}
+
+.tab-button.active {
+  background: var(--cor-primaria);
+  color: var(--cor-primaria-texto);
+  border-color: var(--cor-primaria);
+}
+
+.hidden {
+  display: none !important;
+}
+
+
 
 /* Se quiser testar outra hierarquia no futuro, basta trocar:
    --font-titulos, --font-botoes, --font-textos, --font-tabelas
@@ -98,6 +134,44 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4);
   background: #000;
 }
+
+/* Botões rápidos de jogadoras */
+
+.quick-buttons-container {
+  margin-bottom: 0.75rem;
+}
+
+.quick-buttons-title {
+  margin-bottom: 0.35rem;
+}
+
+.quick-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.4rem;
+}
+
+.quick-player-button {
+  padding: 0.35rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.quick-player-button:hover {
+  background: #111827;
+}
+
+.quick-player-button.active {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #022c22;
+}
+
 
 /* Título principal usa fonte de TÍTULOS */
 h1 {

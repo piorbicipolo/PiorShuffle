@@ -9,29 +9,31 @@
 <body>
   <main class="container">
     <header class="header">
-      <div class="brand">
-        <!-- Troque o src pela logo do clube -->
-        <img
-          src="assets/logo-pior-bikepolo.png"
-          alt="Logo do clube de bike polo"
-          class="logo-clube"
-        />
-        <div>
-          <h1>Quadra de Bike Polo</h1>
-          <p>Abra uma quadra, adicione pessoas e gere partidas equilibradas.</p>
-        </div>
-      </div>
+      <h1>Quadra de Bike Polo</h1>
+      <p>Abra uma quadra, adicione pessoas e gere partidas equilibradas.</p>
     </header>
 
+    <!-- Abas principais -->
+    <nav class="tabs">
+      <button class="tab-button active" data-tab-name="setup">
+        Quadra & Pessoas
+      </button>
+      <button class="tab-button" data-tab-name="partidas">
+        Partidas & Histórico
+      </button>
+    </nav>
+
+    <!-- ============= ABA 1: QUADRA & PESSOAS ============= -->
+
     <!-- Seção Quadra -->
-    <section class="card" id="sec-quadra">
-      <h2>Quadra</h2>
+    <section class="card" id="sec-quadra" data-tab="setup">
+      <h2>Quadra do dia</h2>
       <label>
         Nome da quadra:
         <input
           type="text"
           id="quadraNome"
-          placeholder="Ex: PIOR Quadra"
+          placeholder="Ex: Treino de terça"
           autocomplete="off"
         />
       </label>
@@ -40,8 +42,36 @@
     </section>
 
     <!-- Seção Jogadores -->
-    <section class="card" id="sec-jogadores">
+    <section class="card" id="sec-jogadores" data-tab="setup">
       <h2>Lista de pessoas</h2>
+
+      <!-- Botões rápidos de presença -->
+      <div class="quick-buttons-container">
+        <p class="info quick-buttons-title">
+          Presenças rápidas (clique para adicionar/remover da lista de hoje):
+        </p>
+        <div class="quick-buttons-grid">
+          <button type="button" class="quick-player-button" data-nome="jpg">jpg</button>
+          <button type="button" class="quick-player-button" data-nome="Lusca">Lusca</button>
+          <button type="button" class="quick-player-button" data-nome="Rafa">Rafa</button>
+          <button type="button" class="quick-player-button" data-nome="Dox">Dox</button>
+          <button type="button" class="quick-player-button" data-nome="Vithinho">Vithinho</button>
+          <button type="button" class="quick-player-button" data-nome="Emi">Emi</button>
+          <button type="button" class="quick-player-button" data-nome="Rodox">Rodox</button>
+          <button type="button" class="quick-player-button" data-nome="Buratto">Buratto</button>
+          <button type="button" class="quick-player-button" data-nome="Robs">Robs</button>
+          <button type="button" class="quick-player-button" data-nome="joao">joao</button>
+          <button type="button" class="quick-player-button" data-nome="mat">mat</button>
+          <button type="button" class="quick-player-button" data-nome="Enzo">Enzo</button>
+          <button type="button" class="quick-player-button" data-nome="Leo">Leo</button>
+          <button type="button" class="quick-player-button" data-nome="Tulio">Tulio</button>
+          <button type="button" class="quick-player-button" data-nome="Jay">Jay</button>
+          <button type="button" class="quick-player-button" data-nome="Mourão">Mourão</button>
+          <button type="button" class="quick-player-button" data-nome="Jaime">Jaime</button>
+          <button type="button" class="quick-player-button" data-nome="Gusta">Gusta</button>
+        </div>
+      </div>
+
       <form class="inline-form" id="formJogador">
         <input
           type="text"
@@ -52,6 +82,7 @@
         />
         <button type="submit" id="btnAdicionarJogador">Adicionar</button>
       </form>
+
       <div class="table-wrapper">
         <table id="tabelaJogadores">
           <thead>
@@ -69,20 +100,18 @@
     </section>
 
     <!-- Seção Conflitos -->
-    <section class="card" id="sec-conflitos">
+    <section class="card" id="sec-conflitos" data-tab="setup">
       <h2>Conflitos entre pessoas</h2>
       <p class="info">
-        Use conflitos para evitar que determinadas pessoas joguem juntas
-        no mesmo time ou na mesma partida.
+        Use conflitos para evitar que determinadas pessoas joguem no mesmo time
+        ou até na mesma partida.
       </p>
       <div class="inline-form">
         <select id="selectJogadorA"></select>
         <select id="selectJogadorB"></select>
         <select id="selectTipoConflito">
           <option value="NAO_MESMO_TIME">Não podem jogar no mesmo time</option>
-          <option value="NAO_MESMA_PARTIDA">
-            Não podem estar na mesma partida
-          </option>
+          <option value="NAO_MESMA_PARTIDA">Não podem estar na mesma partida</option>
         </select>
         <button id="btnAdicionarConflito">Adicionar conflito</button>
       </div>
@@ -91,8 +120,10 @@
       </ul>
     </section>
 
-    <!-- Seção Configuração da próxima partida -->
-    <section class="card" id="sec-config">
+    <!-- ============= ABA 2: PARTIDAS & HISTÓRICO ============= -->
+
+    <!-- Configuração da próxima partida -->
+    <section class="card" id="sec-config" data-tab="partidas">
       <h2>Próxima partida</h2>
       <label class="checkbox-row">
         <input type="checkbox" id="chkPriorizarMenosJogos" />
@@ -102,8 +133,8 @@
       <p id="erroPartida" class="erro"></p>
     </section>
 
-    <!-- Seção Partida atual -->
-    <section class="card" id="sec-partida">
+    <!-- Partida atual -->
+    <section class="card" id="sec-partida" data-tab="partidas">
       <h2>Partida atual</h2>
       <div id="partidaConteudo">
         <p>Nenhuma partida gerada ainda.</p>
@@ -142,7 +173,7 @@
     </section>
 
     <!-- Histórico de partidas -->
-    <section class="card" id="sec-historico">
+    <section class="card" id="sec-historico" data-tab="partidas">
       <h2>Histórico de partidas</h2>
       <p class="info">
         Partidas finalizadas com times, placar e saldo de gols.
