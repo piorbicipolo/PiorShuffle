@@ -674,47 +674,64 @@ function criarOuResetarQuadra() {
 
   // Seleção de pessoas e geração de times
   function selecionarPessoasParaPartida(priorizarMenosJogos) {
-    if (!quadra) return null;
-    if (quadra.jogadores.length < 6) {
-      throw new Error("É preciso ter pelo menos 6 pessoas para gerar uma partida.");
-    }
-
-    let jogadores = quadra.jogadores.slice();
-
-    const recemChegades = jogadores.filter((p) => p.primeiroJogoPendente);
-    const veteranas = jogadores.filter((p) => !p.primeiroJogoPendente);
-
-    embaralharArray(recemChegades);
-
-    if (priorizarMenosJogos) {
-      veteranas.sort((a, b) => a.jogos_jogados - b.jogos_jogados);
-      embaralharArray(veteranas);
-    } else {
-      embaralharArray(veteranas);
-    }
-
-    jogadores = [...recemChegades, ...veteranas];
-
-    const selecionados = [];
-
-    for (const jogador of jogadores) {
-      if (selecionados.length === 6) break;
-
-      if (
-        naoGeraConflitoMesmaPartida(jogador, selecionados, quadra.conflitos)
-      ) {
-        selecionados.push(jogador);
-      }
-    }
-
-    if (selecionados.length < 6) {
-      throw new Error(
-        "Não foi possível montar 6 pessoas respeitando os conflitos de 'não mesma partida'."
-      );
-    }
-
-    return selecionados;
+  if (!quadra) return null;
+  if (quadra.jogadores.length < 6) {
+    throw new Error("É preciso ter pelo menos 6 pessoas para gerar uma partida.");
   }
+
+  const jogadores = quadra.jogadores.slice();
+
+  // embaralha tudo uma vez só, pra ter desempate aleatório
+  embaralharArray(jogadores);
+
+  const recemChegades = jogadores.filter((p) => p.primeiroJogoPendente);
+  const veteranas = jogadores.filter((p) => !p.primeiroJogoPendente);
+
+  let candidatos = [];
+
+  if (priorizarMenosJogos) {
+    // 1) recém-chegades sempre têm prioridade absoluta
+    // (normalmente todo mundo começa assim, quem ainda não jogou fica aqui)
+    // 2) veteranas entram em ordem de quem jogou menos
+
+    veteranas.sort((a, b) => a.jogos_jogados - b.jogos_jogados);
+
+    // garante que ninguém com MUITO mais jogo furar a fila:
+    // só consideramos veteranas com até +1 jogo acima do mínimo
+    const minJogos =
+      veteranas.length > 0 ? veteranas[0].jogos_jogados : 0;
+    const limite = minJogos + 1;
+    const veteranasEquilibradas = veteranas.filter(
+      (p) => p.jogos_jogados <= limite
+    );
+
+    candidatos = [...recemChegades, ...veteranasEquilibradas];
+  } else {
+    // modo "aleatório": recém-chegades primeiro, resto na bagunça
+    candidatos = [...recemChegades, ...veteranas];
+  }
+
+  const selecionados = [];
+
+  for (const jogador of candidatos) {
+    if (selecionados.length === 6) break;
+
+    if (
+      naoGeraConflitoMesmaPartida(jogador, selecionados, quadra.conflitos)
+    ) {
+      selecionados.push(jogador);
+    }
+  }
+
+  if (selecionados.length < 6) {
+    throw new Error(
+      "Não foi possível montar 6 pessoas respeitando os conflitos de 'não mesma partida'."
+    );
+  }
+
+  return selecionados;
+}
+
 
   function gerarTimes(pessoasSelecionadas, conflitos) {
     if (pessoasSelecionadas.length !== 6) {
